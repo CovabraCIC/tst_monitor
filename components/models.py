@@ -34,11 +34,10 @@ class Monitoramento(Base):
     
     data_hora_combinacao = Column(DateTime, primary_key=True)
 
-    def __init__(self, task, trigger, folder):
+    def __init__(self, task, trigger, folder, mapping=False):
         # Dados da Tarefa
         self.nome = task.Name
-        # self.ultimo_resultado = results.get(str(task.LastTaskResult), f"Situação desconhecida, [CODE]: {str(task.LastTaskResult)}"),
-        self.ultimo_resultado = "Aguardando"
+        self.ultimo_resultado = "Aguardando" if mapping else results.get(str(task.LastTaskResult), f"Situação desconhecida, [CODE]: {str(task.LastTaskResult)}"),
         self.hora_proxima_execucao = datetime.fromisoformat(str(task.NextRunTime)).time()
         self.hora_ultima_execucao = datetime.fromisoformat(str(task.LastRunTime)).time()
         self.data_proxima_execucao = datetime.fromisoformat(str(task.NextRunTime)).date()
@@ -62,15 +61,17 @@ class Monitoramento(Base):
         self.data_hora_combinacao = datetime.combine(self.data_proxima_execucao, self.trigger_hora)
 
     def __str__(self):
-        return f"{self.nome}"
+        return f"Monitoramento: {self.nome}, Combinação: {self.data_hora_combinacao}, Tipo: {self.trigger_tipo}"
     
     def __repr__(self):
-        return f"<Agendamento(nome={self.nome}, combinacao_horario={self.data_horario_combinacao})>"
+        return f"<Monitoramento(nome={self.nome}, combinacao_horario={self.data_hora_combinacao})>"
     
     def save(self, session):
         session.add(self)
         session.commit()
 
+    def edit(self, session):
+        session.commit()
 
     @classmethod
     def verify_existing(cls, **primary_keys:dict) -> bool:

@@ -1,38 +1,35 @@
-from components.collect_scheduler import tasks_in_scheduler
+from components.collect_scheduler import get_all_tasks
 from datetime import timedelta
 from components.models import Monitoramento
+from utils import *
 
-# MONITORAMENTO
-for task in tasks_in_scheduler:
+from sqlalchemy import not_
 
-    print(task.data_proxima_execucao)
-#     t_name = task.get("nome")
-#     t_status = task.get("status")
-#     t_last_result = task.get("ultimo_resultado")
-#     t_last_rundate = datetime.strptime(task.get("data_ultima_execucao"), '%Y-%m-%d').date()
-#     t_last_runtime = datetime.strptime(task.get("hora_ultima_execucao"), '%H:%M:%S').time()
 
-#     t_last_run_datetime = datetime.combine(t_last_rundate, t_last_runtime)
+tasks_in_table = session.query(Monitoramento).filter(
+    (Monitoramento.data_proxima_execucao == data_hoje) &
+    (not_(Monitoramento.trigger_tipo.startswith('OLD')))
+).all()
 
-#     historys = session.query(Monitoramento).filter_by(nome=t_name, data_proxima_execucao = t_last_rundate).all()
 
-#     if len(historys) > 1:
-#         print(f"Duplicata detectada para a tarefa: {t_name} com {len(historys)} entradas no histórico.")
+for task in get_all_tasks():
 
-#     for history in historys: # Para cada tarefa no histórico
-#         # print(history.status)
-#         h_next_runtime = datetime.combine(history.data_proxima_execucao, history.hora_proxima_execucao) # Transforme a Hora de Próxima Execução em DateTime
+    # Ativando Data e Hora de Combinação da tarefa atual do Scheduler.
+    task.set_data_hora_combinacao()
 
-#         # Defina uma margem de erro de 2 minutos para a Hora de Próxima Execução
-#         h_limit_upper = (h_next_runtime + timedelta(minutes=2))
-#         h_limit_lower = (h_next_runtime - timedelta(minutes=2))
+    # Defina uma margem de erro de 2 minutos para a Hora de Última Execução.
+    h_limit_upper = (datetime.combine(task.data_ultima_execucao, task.hora_ultima_execucao) + timedelta(minutes=2))
+    h_limit_lower = (datetime.combine(task.data_ultima_execucao, task.hora_ultima_execucao) - timedelta(minutes=2))
 
-#         # Verifica se a Hora de Última Execução está dentro da margem de erro 
-#         if (h_limit_lower <= t_last_run_datetime <= h_limit_upper) and history.ultimo_resultado in ["Aguardando", "Em execução"]:
+    # Selecionando no Monitoramento a tarefa mapeada que corresponde à iteração.
+    task_target = session.query(Monitoramento).filter(
+        (Monitoramento.nome == task.nome) &
+        (Monitoramento.trigger_tipo == task.trigger_tipo) &
+        (Monitoramento.data_hora_combinacao >= h_limit_lower) & 
+        (Monitoramento.data_hora_combinacao <= h_limit_upper)
+    ).first()
 
-#             # history.data_ultima_execucao = t_last_rundate
-#             # history.hora_ultima_execucao = t_last_runtime
-#             history.ultimo_resultado = task.get("ultimo_resultado")
-
-#             session.commit()
-# session.close()
+    if task_target:
+        # Atualizar o resultado da tarefa alvo (já armazenada no banco de dados).
+        task_target.ultimo_resultado = task.ultimo_resultado
+        task_target.edit(session)

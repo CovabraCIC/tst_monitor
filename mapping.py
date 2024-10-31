@@ -1,14 +1,14 @@
-from components.collect_scheduler import tasks_in_scheduler
+from components.collect_scheduler import get_all_tasks
 from datetime import timedelta
 from utils import *
 
 @logger_time()
 def main():
-    for task in tasks_in_scheduler:
+    for task in get_all_tasks(mapping=True):
 
         try:
             if task.trigger_tipo == 'Único' and task.hora_proxima_execucao >= hora_hoje:
-                if task.data_proxima_execucao == data_hoje :
+                if task.data_proxima_execucao == data_hoje:
                     task.set_data_hora_combinacao()
                     if not task.verify_existing(nome=task.nome, trigger_tipo=task.trigger_tipo, data_hora_combinacao=task.data_hora_combinacao):
                         task.save(session)
@@ -17,7 +17,7 @@ def main():
                         logger.info(f'Execução {task.nome} no modelo "{task.trigger_tipo}" prevista para {task.data_hora_combinacao} já existe.')
 
             if task.trigger_tipo == 'Diário':
-                if task.data_ultima_execucao + timedelta(days=task.trigger_intervalo_dias) == data_hoje and task.hora_proxima_execucao >= hora_hoje:
+                if (task.data_ultima_execucao + timedelta(days=task.trigger_intervalo_dias) == data_hoje or (task.trigger_intervalo_dias == 1)) and task.hora_proxima_execucao >= hora_hoje:
                     task.set_data_hora_combinacao()
                     if not task.verify_existing(nome=task.nome, trigger_tipo=task.trigger_tipo, data_hora_combinacao=task.data_hora_combinacao):
                         task.save(session)
