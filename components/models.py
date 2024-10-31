@@ -72,12 +72,11 @@ class Monitoramento(Base):
         session.commit()
 
 
-    # @classmethod
-    # def verify_existing(cls, **primary_keys:dict) -> bool:
-    #     """Retorna True se a consulta existir."""
-    #     existing_item = db.session.query(cls).filter_by(**primary_keys).first()
-    #     # if session.query(cls).filter(**primary_keys).count():
-    #     return existing_item is not None
+    @classmethod
+    def verify_existing(cls, **primary_keys:dict) -> bool:
+        """Retorna True se a consulta existir."""
+        existing_item = db.session.query(cls).filter_by(**primary_keys).first()
+        return True if existing_item else False
 
 # Criação da tabela no banco de dados (python -m components.models)
 Base.metadata.create_all(engine)
