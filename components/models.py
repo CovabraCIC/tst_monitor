@@ -55,6 +55,10 @@ class Monitoramento(Base):
             self.trigger_dias_da_semana = get_trigger_days_of_week(getattr(trigger, "DaysOfWeek", None))
             self.trigger_dias_do_mes = get_trigger_days_of_month(getattr(trigger, "DaysOfMonth", None))
             self.trigger_meses_do_ano = get_trigger_months_of_year(getattr(trigger, "MonthsOfYear", None))
+            self.trigger_repeticoes = ""
+            self.trigger_repeticao_intervalo = ""
+            self.trigger_repeticao_periodo = ""
+            self.trigger_status = ""
 
     def set_data_hora_combinacao(self):
         """Motor de Combinação Tarefa + Trigger (inerente e exclusivo p/ execução com menor data, as demais não são previsíveis)"""
